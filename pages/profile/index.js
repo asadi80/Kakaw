@@ -481,7 +481,7 @@ function Profile() {
       <div className="p-4 border-t mx-8 mt-2 flex justify-center">
         <button onClick={() => handelViewProfile(user._id)}>
           <Image
-            text={`http://localhost:3000/user/${user._id}`}
+            text={`https://kakaw-n0hv7zvhw-asadi80s-projects.vercel.app/user/${user._id}`}
             options={{
               type: "image/jpeg",
               quality: 1,
