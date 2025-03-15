@@ -10,7 +10,7 @@ export default async function handler(req, res) {
 
   const { email, password, name } = req.body;
 
-  if (!email || !password) {
+  if (!email || !password || !name) {
     return res.status(400).json({ error: "All fields are required" });
   }
 

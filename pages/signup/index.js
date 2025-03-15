@@ -13,8 +13,9 @@ export default function Signup() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    localStorage.clear("authToken");
-      localStorage.clear("userId");
+    // Clear previous auth data
+  localStorage.removeItem("authToken");
+  localStorage.removeItem("userId");
     console.log("Signup:", { name, email, password });
 
     try {
