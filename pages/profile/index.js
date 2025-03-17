@@ -427,7 +427,6 @@ function Profile() {
                 className="flex items-center justify-center w-full "
               >
                 <button className="bg-white w-full text-gray-800 font-semibold py-2 px-4 border border-gray-400 rounded shadow">
-                  <span className="relative px-5 py-2.5 transition-all ease-in duration-75 bg-white dark:bg-gray-900 rounded-md group-hover:bg-transparent group-hover:dark:bg-transparent">
                     <a
                       key={link._id}
                       href={link.url}
@@ -436,7 +435,7 @@ function Profile() {
                     >
                       {link.title}
                     </a>
-                  </span>
+                 
                 </button>
                 <button onClick={() => handelDeleteLink(link._id)}>
                   <svg
