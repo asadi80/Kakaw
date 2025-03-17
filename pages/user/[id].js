@@ -141,7 +141,7 @@ export default function User() {
                 className="flex items-center justify-center w-full "
               >
                 <button className="bg-white w-full text-gray-800 font-semibold py-2 px-4 border border-gray-400 rounded shadow">
-                  <span className="relative px-5 py-2.5 transition-all ease-in duration-75 bg-white dark:bg-gray-900 rounded-md group-hover:bg-transparent group-hover:dark:bg-transparent">
+                 
                     <a
                       key={link._id}
                       href={link.url}
@@ -150,7 +150,7 @@ export default function User() {
                     >
                       {link.title}
                     </a>
-                  </span>
+                 
                 </button>
               </div>
             ))}
@@ -158,7 +158,7 @@ export default function User() {
       </div>
       <div className="p-4 border-t mx-8 mt-2 flex justify-center">
         <Image
-          text={`https://kakaw-n0hv7zvhw-asadi80s-projects.vercel.app/user/${user._id}`}
+          text={`https://kakaw-ten.vercel.app/user/${user._id}`}
           options={{
             type: "image/jpeg",
             quality: 1,
