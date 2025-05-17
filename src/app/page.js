@@ -8,7 +8,7 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>QR Business Card</title>
+        <title>CACAO</title>
         <meta name="description" content="Your digital business card. Scan, connect, share." />
       </Head>
 
