@@ -8,14 +8,14 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>CACAO</title>
+        <title>KAKAW</title>
         <meta name="description" content="Your digital business card. Scan, connect, share." />
       </Head>
 
       <main className="min-h-screen bg-white text-gray-800">
         {/* Navbar */}
         <nav className="flex items-center justify-between px-6 py-4 shadow-sm">
-          <h1 className="text-xl font-bold">CACAO</h1>
+          <h1 className="text-xl font-bold">KAKAW</h1>
           <div className="space-x-4">
             <Link href="/login" className="text-blue-600 hover:underline">Login</Link>
             <Link href="/signup" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Sign Up</Link>
