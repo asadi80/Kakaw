@@ -1,12 +1,11 @@
 "use client";
 import { useState } from "react";
-import { useRouter } from "next/router";
-
+import { useRouter } from "next/navigation";
 import { Mail, Lock, AlertCircle, QrCode } from "lucide-react";
 import "../../styles/globals.css";
 
 export default function Login() {
-      const router = useRouter();
+  const router = useRouter();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -29,14 +28,14 @@ export default function Login() {
 
       const data = await response.json();
       console.log(data);
-      
 
       if (!response.ok) {
         setError(data.error || "Login failed");
         setIsLoading(false);
         return;
       }
-
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("userId", data.userId);
       // Simulate redirect (in actual Next.js app, use router.push)
       router.push("/profile");
     } catch (error) {
@@ -82,7 +81,10 @@ export default function Login() {
               {/* Error Message */}
               {error && (
                 <div className="flex items-start space-x-3 p-4 bg-red-500/10 border border-red-500/30 rounded-2xl backdrop-blur-sm">
-                  <AlertCircle className="text-red-400 flex-shrink-0 mt-0.5" size={20} />
+                  <AlertCircle
+                    className="text-red-400 flex-shrink-0 mt-0.5"
+                    size={20}
+                  />
                   <p className="text-red-200 text-sm">{error}</p>
                 </div>
               )}
@@ -133,9 +135,24 @@ export default function Login() {
               >
                 {isLoading ? (
                   <span className="flex items-center justify-center">
-                    <svg className="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <svg
+                      className="animate-spin h-5 w-5 mr-3"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                        fill="none"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
                     </svg>
                     Signing In...
                   </span>
