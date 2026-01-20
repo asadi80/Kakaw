@@ -6,13 +6,14 @@ import { Mail, Lock, AlertCircle, QrCode } from "lucide-react";
 import "../../styles/globals.css";
 
 export default function Login() {
+      const router = useRouter();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e) => {
-    const router = useRouter();
     e.preventDefault();
     setIsLoading(true);
     setError("");
