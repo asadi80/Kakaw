@@ -1,4 +1,4 @@
-import connectToDatabase from "../../../utils/db";
+import connectToDatabase from "../../../utils/dbLocal";
 import User from "../../../models/User";
 import Link from "../../../models/Link";
 import mongoose from "mongoose";
