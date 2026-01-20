@@ -494,7 +494,7 @@ export default function Profile() {
   };
 
   const handleProfilePictureSave = async (url) => {
-    const token = localStorage.getItem("authToken");
+    const token = localStorage.getItem("token");
     const userId = localStorage.getItem("userId");
 
     if (!token || !userId) return;
