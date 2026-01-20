@@ -399,7 +399,7 @@ export default function Profile() {
 
   useEffect(() => {
     const fetchProfile = async () => {
-      const token = localStorage.getItem("authToken");
+      const token = localStorage.getItem("token");
       const userId = localStorage.getItem("userId");
 
       if (!token || !userId) {
