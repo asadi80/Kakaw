@@ -1,8 +1,11 @@
 import { useState } from "react";
+import { useRouter } from "next/router";
+
 import { Mail, Lock, User, AlertCircle, QrCode } from "lucide-react";
 import "../../styles/globals.css";
 
 export default function Signup() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
@@ -35,7 +38,7 @@ export default function Signup() {
       console.log("Signup Successful:", data);
 
       // Simulate redirect (in actual Next.js app, use router.push)
-      window.location.href = `/profile`;
+      router.push("/profile");
     } catch (error) {
       console.error("Error signing up:", error);
       setError("Something went wrong. Please try again.");

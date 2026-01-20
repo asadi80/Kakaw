@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useRouter } from "next/router";
+
 import { Mail, Lock, AlertCircle, QrCode } from "lucide-react";
 import "../../styles/globals.css";
 
@@ -9,6 +11,7 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e) => {
+    const router = useRouter();
     e.preventDefault();
     setIsLoading(true);
     setError("");
@@ -31,7 +34,7 @@ export default function Login() {
       }
 
       // Simulate redirect (in actual Next.js app, use router.push)
-      window.location.href = `/profile`;
+      router.push("/profile");
     } catch (error) {
       console.error("Error logging in:", error);
       setError("An error occurred. Please try again.");
