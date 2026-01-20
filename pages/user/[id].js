@@ -198,6 +198,7 @@ export default function UserView() {
                   </div>
                 </div>
                 <p className="text-white/60 text-sm">Scan to view profile</p>
+                <a href="/signup">Signup</a>
               </div>
             </div>
           </div>
