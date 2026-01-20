@@ -18,7 +18,7 @@ export default function Signup() {
     setIsLoading(true);
     setError("");
 
-    console.log("Signup:", { name, email, password });
+    // console.log("Signup:", { name, email, password });
 
     try {
       const response = await fetch("/api/auth/signup", {

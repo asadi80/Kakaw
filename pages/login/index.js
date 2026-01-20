@@ -17,7 +17,7 @@ export default function Login() {
     setIsLoading(true);
     setError("");
 
-    console.log("Login:", { email, password });
+    // console.log("Login:", { email, password });
 
     try {
       const response = await fetch("/api/auth/login", {
