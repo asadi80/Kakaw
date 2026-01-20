@@ -8,7 +8,7 @@ export default async function handler(req, res) {
 
   const { aboutMe, userId } = req.body;
 
-  if (!aboutMe || !userId) {
+  if (!userId) {
     return res.status(400).json({ error: "All fields are required" });
   }
 

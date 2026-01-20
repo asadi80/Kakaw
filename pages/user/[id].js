@@ -1,27 +1,43 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
-import UserNotFound from "../../components/UserNotFound"; // Import the UserNotFound component
-import { useQRCode } from "next-qrcode";
+import { QRCodeCanvas } from "qrcode.react";
 
 import "../../styles/globals.css";
 
-const SkeletonLoader = () => (
-  <div className="space-y-6 animate-pulse">
-    <div className="flex items-center space-x-6">
-      <div className="w-24 h-24 rounded-full bg-gray-300"></div>
-      <div className="h-8 bg-gray-300 rounded w-48"></div>
-    </div>
-    <div>
-      <div className="h-6 bg-gray-300 rounded w-32 mb-4"></div>
-      <div className="space-y-2">
-        <div className="h-4 bg-gray-300 rounded w-48"></div>
-        <div className="h-4 bg-gray-300 rounded w-48"></div>
+import {
+  Mail,
+  Phone,
+  User,
+  QrCode,
+  ExternalLink,
+  AlertCircle,
+} from "lucide-react";
+import { useQRCode } from "next-qrcode";
+
+// UserNotFound component
+const UserNotFound = () => (
+  <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center px-6">
+    <div className="text-center space-y-6 max-w-md">
+      <div className="flex justify-center">
+        <div className="bg-red-500/20 p-6 rounded-full border border-red-500/30">
+          <AlertCircle className="text-red-400" size={64} />
+        </div>
       </div>
+      <h2 className="text-3xl font-bold text-white">User Not Found</h2>
+      <p className="text-white/60">
+        The profile you're looking for doesn't exist or has been removed.
+      </p>
+      <button
+        onClick={() => (window.location.href = "/")}
+        className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white font-semibold rounded-xl hover:scale-105 transition-all shadow-lg"
+      >
+        Go Home
+      </button>
     </div>
   </div>
 );
 
-export default function User() {
+export default function UserView() {
   const router = useRouter();
   const { Image } = useQRCode();
   const [links, setLinks] = useState("");
@@ -64,128 +80,128 @@ export default function User() {
     fetchProfile();
   }, [id, router.isReady]);
 
-  const retryFetchProfile = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch(`/api/auth/user?id=${id}`);
-      if (!res.ok) throw new Error("Failed to fetch user data");
-      const data = await res.json();
-      setUser(data);
-    } catch (err) {
-      setError("Failed to load user profile. Please try again later.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   if (loading) {
     return (
-      <div role="status" className="flex flex-row min-h-screen justify-center items-center">
-        <svg
-          aria-hidden="true"
-          class="inline w-10 h-10 text-gray-200 animate-spin dark:text-gray-600 fill-blue-600"
-          viewBox="0 0 100 101"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
-            fill="currentColor"
-          />
-          <path
-            d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
-            fill="currentFill"
-          />
-        </svg>
-        <span class="sr-only">Loading...</span>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+        <div className="flex flex-col items-center space-y-4">
+          <svg
+            className="animate-spin h-12 w-12 text-blue-400"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+              fill="none"
+            ></circle>
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            ></path>
+          </svg>
+          <p className="text-white/60">Loading profile...</p>
+        </div>
       </div>
     );
   }
 
-  // Display UserNotFound component if the ID is invalid or the user is not found
   if (error || !user) {
     return <UserNotFound />;
   }
 
   return (
-    <div className="max-w-2xl mx-4 sm:max-w-sm md:max-w-sm lg:max-w-sm xl:max-w-sm sm:mx-auto md:mx-auto lg:mx-auto xl:mx-auto mt-16 bg-white shadow-xl rounded-lg text-gray-900">
-      <div className="rounded-t-lg h-32 overflow-hidden">
-        <img
-          className="object-cover object-top w-full"
-          src="https://images.unsplash.com/photo-1549880338-65ddcdfd017b?ixlib=rb-1.2.1&q=80&fm=jpg&crop=entropy&cs=tinysrgb&w=400&fit=max&ixid=eyJhcHBfaWQiOjE0NTg5fQ"
-          alt="Mountain"
-        />
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 py-12 px-6 relative overflow-hidden">
+      {/* Animated background */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none opacity-20">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl animate-pulse"></div>
+        <div className="absolute top-1/2 right-1/4 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl animate-pulse delay-1000"></div>
       </div>
 
-      <div className="mx-auto w-32 h-32 relative -mt-16 border-4 border-white rounded-full overflow-hidden">
-        <img
-          src={
-            user.profilePicture ||
-            "https://img.icons8.com/?size=100&id=tZuAOUGm9AuS&format=png&color=000000"
-          }
-          alt={`${user.name}'s profile`}
-          className="object-cover object-center h-32"
-          onError={(e) => {
-            if (e.target.src.endsWith("/default-profile.jpg")) return; // Prevent infinite requests
-            e.target.src = "/default-profile.jpg";
-          }}
-        />
-      </div>
-      <div className="text-center mt-2">
-        <h2 className="font-semibold">{user.name}</h2>
-        {user.occupation && <p className="text-gray-500">{user.occupation}</p>}
-      </div>
+      <div className="max-w-2xl mx-auto relative z-10">
+        {/* Main Card */}
+        <div className="relative">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-3xl blur-xl opacity-30"></div>
 
-      <div className="p-4 border-t mx-8 mt-2 flex justify-center">
-        <div>
-          {user.email && <p>Email: {user.email}</p>}
-          {user.phone && <p>Phone: {user.phone}</p>}
-        </div>
-      </div>
+          <div className="relative bg-white/10 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl overflow-hidden">
+            {/* Header Background */}
+            <div className="h-32 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"></div>
 
-      <div className="p-4 border-t mx-8 mt-2 flex justify-center">
-        <div>{user.aboutMe && <p>About Me: {user.aboutMe}</p>}</div>
-      </div>
-
-      <div className="p-4 border-t mx-8 mt-2">
-        <div className="mt-2 space-y-2">
-          {links &&
-            links.map((link) => (
-              <div
-                key={link._id}
-                className="flex items-center justify-center w-full "
-              >
-                <button className="bg-white w-full text-gray-800 font-semibold py-2 px-4 border border-gray-400 rounded shadow">
-                  <a
-                    key={link._id}
-                    href={link.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {link.title}
-                  </a>
-                </button>
+            {/* Profile Picture */}
+            <div className="px-8 -mt-16 mb-6 flex justify-center">
+              <div className="w-32 h-32 border-4 border-white/20 rounded-full overflow-hidden shadow-xl bg-white/10">
+                <img
+                  src={
+                    user.profilePicture ||
+                    "https://img.icons8.com/?size=100&id=tZuAOUGm9AuS&format=png&color=000000"
+                  }
+                  alt={user.name}
+                  className="w-full h-full object-cover"
+                />
               </div>
-            ))}
+            </div>
+
+            {/* Content */}
+            <div className="px-8 pb-8 space-y-6 text-white">
+              {/* Name */}
+              <div className="text-center">
+                <h2 className="text-3xl font-bold">{user.name}</h2>
+                {user.occupation && (
+                  <p className="text-white/60 mt-1">{user.occupation}</p>
+                )}
+              </div>
+
+              {/* Contact */}
+              <div className="space-y-2 border-t border-white/10 pt-4 text-center text-white/70">
+                {user.email && <p>{user.email}</p>}
+                {user.phone && <p>{user.phone}</p>}
+              </div>
+
+              {/* About Me */}
+              {user.aboutMe && (
+                <div className="border-t border-white/10 pt-4">
+                  <h3 className="text-white font-semibold mb-2">About Me</h3>
+                  <p className="text-white/70 text-sm leading-relaxed">
+                    {user.aboutMe}
+                  </p>
+                </div>
+              )}
+
+              {/* Links */}
+              {links?.length > 0 && (
+                <div className="border-t border-white/10 pt-4 space-y-3">
+                  {links.map((link) => (
+                    <a
+                      key={link._id}
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-center font-medium hover:bg-white/10 transition"
+                    >
+                      {link.title}
+                    </a>
+                  ))}
+                </div>
+              )}
+
+              {/* QR Code */}
+              <div className="border-t border-white/10 pt-6 flex flex-col items-center space-y-3">
+                <div className="bg-white p-4 rounded-2xl">
+                  <div className="w-48 h-48 bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl flex items-center justify-center">
+                      <QRCodeCanvas
+                      value={`https://kakaw-ten.vercel.app/user/${user._id}`}
+                      size={128}
+                    />
+                  </div>
+                </div>
+                <p className="text-white/60 text-sm">Scan to view profile</p>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-      <div className="p-4 border-t mx-8 mt-2 flex justify-center">
-        <Image
-          text={`https://kakaw-ten.vercel.app/user/${user._id}`}
-          options={{
-            type: "image/jpeg",
-            quality: 1,
-            errorCorrectionLevel: "M",
-            margin: 3,
-            scale: 4,
-            width: 200,
-            color: {
-              dark: "#000",
-              light: "#FFFFFF",
-            },
-          }}
-        />
       </div>
     </div>
   );

@@ -1,79 +1,203 @@
-import React from 'react';
-import Image from 'next/image';
+import { useState, useEffect } from "react";
+import { useRouter } from "next/router";
+import "../../styles/globals.css";
 
-export default function Test() {
+import {
+  Mail,
+  Phone,
+  User,
+  QrCode,
+  ExternalLink,
+  AlertCircle,
+} from "lucide-react";
+import { useQRCode } from "next-qrcode";
+
+// UserNotFound component
+const UserNotFound = () => (
+  <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center px-6">
+    <div className="text-center space-y-6 max-w-md">
+      <div className="flex justify-center">
+        <div className="bg-red-500/20 p-6 rounded-full border border-red-500/30">
+          <AlertCircle className="text-red-400" size={64} />
+        </div>
+      </div>
+      <h2 className="text-3xl font-bold text-white">User Not Found</h2>
+      <p className="text-white/60">
+        The profile you're looking for doesn't exist or has been removed.
+      </p>
+      <button
+        onClick={() => (window.location.href = "/")}
+        className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white font-semibold rounded-xl hover:scale-105 transition-all shadow-lg"
+      >
+        Go Home
+      </button>
+    </div>
+  </div>
+);
+
+export default function UserView() {
+  const router = useRouter();
+  const { Image } = useQRCode();
+  const [links, setLinks] = useState("");
+
+  const { id } = router.query;
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!router.isReady || !id) return; // Don't fetch if id is missing
+
+      if (typeof id !== "string" || !/^[a-f\d]{24}$/i.test(id)) {
+        // Example MongoDB ObjectId check
+        setError("Invalid user ID format.");
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/auth/user?id=${id}`);
+
+        if (!res.ok) {
+          const errorData = await res.json();
+          throw new Error(errorData.error || "Failed to fetch user data");
+        }
+
+        const data = await res.json();
+        setUser(data);
+        setLinks(data.links);
+      } catch (error) {
+        console.error("Error fetching profile:", error);
+        setError("Failed to load user profile. Please try again later.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, [id, router.isReady]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+        <div className="flex flex-col items-center space-y-4">
+          <svg
+            className="animate-spin h-12 w-12 text-blue-400"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+              fill="none"
+            ></circle>
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            ></path>
+          </svg>
+          <p className="text-white/60">Loading profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !user) {
+    return <UserNotFound />;
+  }
+
   return (
-    <section className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-center">
-          <div className="w-full max-w-2xl">
-            <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-              <div className="flex flex-col md:flex-row">
-                <div className="bg-gradient-to-b from-blue-500 to-blue-600 text-white text-center py-8 px-6 md:w-1/3">
-                  <div className="relative w-20 h-20 mx-auto mb-4">
-                    <img
-                      src="https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-chat/ava1-bg.webp"
-                      alt="Avatar"
-                      layout="fill"
-                      className="rounded-full"
-                    />
-                  </div>
-                  <h2 className="text-xl font-semibold">Marie Horwitz</h2>
-                  <p className="text-sm text-gray-200">Web Designer</p>
-                  <button className="mt-4 text-gray-200 hover:text-white">
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
-                    </svg>
-                  </button>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 py-12 px-6 relative overflow-hidden">
+      {/* Animated background */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none opacity-20">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl animate-pulse"></div>
+        <div className="absolute top-1/2 right-1/4 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl animate-pulse delay-1000"></div>
+      </div>
+
+      <div className="max-w-2xl mx-auto relative z-10">
+        {/* Main Card */}
+        <div className="relative">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-3xl blur-xl opacity-30"></div>
+
+          <div className="relative bg-white/10 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl overflow-hidden">
+            {/* Header Background */}
+            <div className="h-32 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"></div>
+
+            {/* Profile Picture */}
+            <div className="px-8 -mt-16 mb-6 flex justify-center">
+              <div className="w-32 h-32 border-4 border-white/20 rounded-full overflow-hidden shadow-xl bg-white/10">
+                <img
+                  src={
+                    user.profilePicture ||
+                    "https://img.icons8.com/?size=100&id=tZuAOUGm9AuS&format=png&color=000000"
+                  }
+                  alt={user.name}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="px-8 pb-8 space-y-6 text-white">
+              {/* Name */}
+              <div className="text-center">
+                <h2 className="text-3xl font-bold">{user.name}</h2>
+                {user.occupation && (
+                  <p className="text-white/60 mt-1">{user.occupation}</p>
+                )}
+              </div>
+
+              {/* Contact */}
+              <div className="space-y-2 border-t border-white/10 pt-4 text-center text-white/70">
+                {user.email && <p>{user.email}</p>}
+                {user.phone && <p>{user.phone}</p>}
+              </div>
+
+              {/* About Me */}
+              {user.aboutMe && (
+                <div className="border-t border-white/10 pt-4">
+                  <h3 className="text-white font-semibold mb-2">About Me</h3>
+                  <p className="text-white/70 text-sm leading-relaxed">
+                    {user.aboutMe}
+                  </p>
                 </div>
-                <div className="p-6 md:w-2/3">
-                  <h3 className="text-lg font-semibold mb-4">Information</h3>
-                  <hr className="my-4" />
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-600">Email</h4>
-                      <p className="text-sm text-gray-500">info@example.com</p>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-600">Phone</h4>
-                      <p className="text-sm text-gray-500">123 456 789</p>
-                    </div>
-                  </div>
-                  <h3 className="text-lg font-semibold mt-6 mb-4">Information</h3>
-                  <hr className="my-4" />
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-600">Email</h4>
-                      <p className="text-sm text-gray-500">info@example.com</p>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-600">Phone</h4>
-                      <p className="text-sm text-gray-500">123 456 789</p>
-                    </div>
-                  </div>
-                  <div className="flex mt-6 space-x-4">
-                    <a href="#!" className="text-gray-600 hover:text-blue-600">
-                      <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047v-2.642c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.234 2.686.234v2.953h-1.514c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                      </svg>
+              )}
+
+              {/* Links */}
+              {links?.length > 0 && (
+                <div className="border-t border-white/10 pt-4 space-y-3">
+                  {links.map((link) => (
+                    <a
+                      key={link._id}
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-center font-medium hover:bg-white/10 transition"
+                    >
+                      {link.title}
                     </a>
-                    <a href="#!" className="text-gray-600 hover:text-blue-400">
-                      <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z" />
-                      </svg>
-                    </a>
-                    <a href="#!" className="text-gray-600 hover:text-pink-600">
-                      <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
-                      </svg>
-                    </a>
+                  ))}
+                </div>
+              )}
+
+              {/* QR Code */}
+              <div className="border-t border-white/10 pt-6 flex flex-col items-center space-y-3">
+                <div className="bg-white p-4 rounded-2xl">
+                  <div className="w-48 h-48 bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl flex items-center justify-center">
+                    <QrCode className="text-white" size={128} />
                   </div>
                 </div>
+                <p className="text-white/60 text-sm">Scan to view profile</p>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </section>
+    </div>
   );
 }

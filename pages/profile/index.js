@@ -1,30 +1,399 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/router";
-import requireAuth from "../../utils/requireAuth";
-import ProfilePictureUpload from "../../components/ProfilePictureUpload";
+import { QRCodeCanvas } from "qrcode.react";
+
+import {
+  Mail,
+  Phone,
+  User,
+  Edit2,
+  Save,
+  X,
+  Trash2,
+  Plus,
+  Camera,
+  Loader,
+  Upload,
+  QrCode,
+  Link as LinkIcon,
+  Briefcase,
+  Info,
+} from "lucide-react";
 import "../../styles/globals.css";
-import { useQRCode } from "next-qrcode";
 
-import AddLink from "../../components/addLink";
-import AboutMe from "../../components/aboutMe";
+// Mock ProfilePictureUpload component
+const ProfilePictureUpload = ({ imageUrl, onUpload }) => {
+  const [uploading, setUploading] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [preview, setPreview] = useState(null);
+  const fileInputRef = useRef(null);
 
-function Profile() {
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      alert("Please select an image file");
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Image size should be less than 5MB");
+      return;
+    }
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setPreview(e.target.result);
+      setShowModal(true);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleUpload = async () => {
+    if (!preview) return;
+
+    setUploading(true);
+
+    try {
+      const response = await fetch(preview);
+      const blob = await response.blob();
+
+      const formData = new FormData();
+      formData.append("file", blob);
+      formData.append(
+        "upload_preset",
+        process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET
+      );
+
+      const uploadResponse = await fetch(
+        `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      if (!uploadResponse.ok) {
+        throw new Error("Upload failed");
+      }
+
+      const data = await uploadResponse.json();
+
+      // ✅ parent controls state
+      onUpload?.(data.secure_url);
+
+      setShowModal(false);
+      setPreview(null);
+    } catch (error) {
+      console.error("Upload error:", error);
+      alert("Failed to upload image.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setShowModal(false);
+    setPreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  return (
+    <>
+      {/* Profile Image Button */}
+      <div className="relative w-full h-full group">
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          className="relative w-full h-full rounded-full overflow-hidden"
+          aria-label="Upload profile picture"
+        >
+          <img
+            src={
+              imageUrl ||
+              "https://img.icons8.com/?size=100&id=tZuAOUGm9AuS&format=png&color=000000"
+            }
+            alt="Profile"
+            className="object-cover w-full h-full"
+          />
+
+          {/* Hover overlay */}
+          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
+            <Camera className="text-white" size={28} />
+          </div>
+        </button>
+
+        {/* Hidden file input */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleFileSelect}
+          className="hidden"
+        />
+      </div>
+
+      {/* Upload Modal */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-6">
+          <div className="relative max-w-md w-full">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-3xl blur-xl opacity-30"></div>
+
+            <div className="relative bg-slate-900 rounded-3xl border border-white/20 shadow-2xl overflow-hidden">
+              {/* Header */}
+              <div className="bg-gradient-to-r from-blue-500 to-purple-500 px-6 py-4 flex items-center justify-between">
+                <h3 className="text-white font-semibold text-lg">
+                  Upload Profile Picture
+                </h3>
+                <button
+                  onClick={handleCancel}
+                  disabled={uploading}
+                  className="text-white/80 hover:text-white transition disabled:opacity-50"
+                >
+                  <X size={24} />
+                </button>
+              </div>
+
+              {/* Preview */}
+              <div className="p-6">
+                <div className="aspect-square rounded-2xl overflow-hidden bg-slate-800 mb-6">
+                  <img
+                    src={preview}
+                    alt="Preview"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleCancel}
+                    disabled={uploading}
+                    className="flex-1 px-4 py-3 bg-white/10 border border-white/20 text-white rounded-xl hover:bg-white/20 transition disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleUpload}
+                    disabled={uploading}
+                    className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-xl hover:scale-105 transition disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 font-medium flex items-center justify-center space-x-2"
+                  >
+                    {uploading ? (
+                      <>
+                        <Loader className="animate-spin" size={20} />
+                        <span>Uploading...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Upload size={20} />
+                        <span>Upload</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {/* File Info */}
+                <p className="text-white/40 text-xs text-center mt-4">
+                  Maximum file size: 5MB • Supported formats: JPG, PNG, GIF
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
+
+// Mock AddLink component
+const AddLink = ({ setLinks }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [title, setTitle] = useState("");
+  const [url, setUrl] = useState("");
+
+  const handleAdd = async () => {
+    if (!title || !url) return;
+
+    const userId = localStorage.getItem("userId");
+
+    try {
+      const response = await fetch("/api/auth/addLink", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, url, userId }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        setError(errorData.error || "An error occurred");
+        return;
+      }
+
+      const data = await response.json();
+      setLinks((prev) => [...prev, data.newLink]);
+      setTitle("");
+      setUrl("");
+      setIsOpen(false);
+    } catch (err) {
+      console.error("Error adding link:", err);
+      setError("Something went wrong. Please try again.");
+    }
+  };
+
+  return (
+    <div>
+      {!isOpen ? (
+        <button
+          onClick={() => setIsOpen(true)}
+          className="w-full py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white font-semibold rounded-xl hover:scale-105 transition-all shadow-lg flex items-center justify-center space-x-2"
+        >
+          <Plus size={20} />
+          <span>Add Link</span>
+        </button>
+      ) : (
+        <div className="space-y-3 bg-white/5 p-4 rounded-xl border border-white/10">
+          <input
+            type="text"
+            placeholder="Link Title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <input
+            type="url"
+            placeholder="https://..."
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <div className="flex space-x-2">
+            <button
+              onClick={handleAdd}
+              className="flex-1 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition"
+            >
+              Add
+            </button>
+            <button
+              onClick={() => setIsOpen(false)}
+              className="flex-1 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Mock AboutMe component
+const AboutMe = ({ aboutMe, setAboutMe }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [text, setText] = useState(aboutMe || "");
+  const [error, setError] = useState("");
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+
+    if (!text.trim()) {
+      setError("About Me cannot be empty");
+      return;
+    }
+
+    const userId = localStorage.getItem("userId");
+
+    try {
+      const response = await fetch("/api/auth/aboutMe", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ aboutMe: text, userId }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        setError(errorData.error || "An error occurred");
+        return;
+      }
+
+      const data = await response.json();
+      setAboutMe(data.aboutMe ?? text);
+
+      setIsEditing(false);
+    } catch (error) {
+      console.error("Error updating about me:", error);
+      setError("Something went wrong. Please try again.");
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <h3 className="text-white font-semibold flex items-center space-x-2">
+          <Info size={18} />
+          <span>About Me</span>
+        </h3>
+        {!isEditing && (
+          <button
+            onClick={() => setIsEditing(true)}
+            className="text-blue-400 hover:text-blue-300"
+          >
+            <Edit2 size={18} />
+          </button>
+        )}
+      </div>
+      {isEditing ? (
+        <div className="space-y-2">
+          <textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px]"
+            placeholder="Tell us about yourself..."
+          />
+          <div className="flex space-x-2">
+            <button
+              onClick={handleSave}
+              className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition flex items-center space-x-1"
+            >
+              <Save size={16} />
+              <span>Save</span>
+            </button>
+            <button
+              onClick={() => setIsEditing(false)}
+              className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition flex items-center space-x-1"
+            >
+              <X size={16} />
+              <span>Cancel</span>
+            </button>
+          </div>
+        </div>
+      ) : (
+        <p className="text-white/70">{aboutMe || "No bio added yet"}</p>
+      )}
+      {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
+    </div>
+  );
+};
+
+export default function Profile() {
   const router = useRouter();
-  const { Image } = useQRCode();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editingField, setEditingField] = useState(null);
   const [error, setError] = useState("");
-  const [profilePicture, setProfilePicture] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     phone: "",
-    profilePicture: "",
     occupation: "",
   });
-  const [links, setLinks] = useState("");
+  const [links, setLinks] = useState([]);
   const [aboutMe, setAboutMe] = useState("");
 
   useEffect(() => {
@@ -46,7 +415,7 @@ function Profile() {
 
         if (res.ok) {
           setUser(data);
-          setLinks(data.links);
+          setLinks(data.links || []);
           setImageUrl(data.profilePicture);
           setAboutMe(data.aboutMe);
           setFormData({
@@ -78,72 +447,25 @@ function Profile() {
     setEditingField(null);
   };
 
-  const handleUpload = (imageUrl) => {
-    setProfilePicture(imageUrl);
-    setImageUrl(imageUrl); // Ensure both states are updated
-    saveProfilePicture(imageUrl);
-    console.log(imageUrl);
-  };
-
-  const saveProfilePicture = async (imageUrl) => {
-    const token = localStorage.getItem("authToken");
-    const userId = localStorage.getItem("userId");
-    try {
-      const res = await fetch(`/api/auth/profile?userId=${userId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ profilePicture: imageUrl }),
-      });
-
-      if (!res.ok) {
-        throw new Error("Failed to save profile picture");
-      }
-    } catch (error) {
-      console.error("Error saving profile picture:", error);
-    }
-  };
-
   const handleChange = (e) => {
     const { name, value } = e.target;
-
-    if (name.startsWith("socialLinks.")) {
-      const [parentKey, childKey] = name.split(".");
-      setFormData((prev) => ({
-        ...prev,
-        [parentKey]: {
-          ...prev[parentKey],
-          [childKey]: value,
-        },
-      }));
-    } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
-    }
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
+
   const handleSaveField = async (field) => {
     const token = localStorage.getItem("authToken");
     const userId = localStorage.getItem("userId");
-    console.log(field);
 
     if (!token || !userId) {
       router.push("/login");
       return;
     }
 
+    const updateData = {
+      [field]: formData[field],
+    };
+
     try {
-      let updateData = {};
-      if (field.startsWith("socialLinks.")) {
-        const [parentKey, childKey] = field.split(".");
-        updateData = {
-          [parentKey]: {
-            [childKey]: formData[parentKey][childKey],
-          },
-        };
-      } else {
-        updateData = { [field]: formData[field] };
-      }
       const res = await fetch(`/api/auth/profile?userId=${userId}`, {
         method: "PUT",
         headers: {
@@ -153,375 +475,356 @@ function Profile() {
         body: JSON.stringify(updateData),
       });
 
-      if (res.ok) {
-        const updatedUser = await res.json();
-        setUser(updatedUser);
-        setEditingField(null);
-        setError("");
-      } else {
-        setError("Failed to update profile. Please try again.");
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "Failed to update profile");
+        return;
       }
+
+      // Update UI with DB response
+      setUser(data);
+      setEditingField(null);
+      setError("");
     } catch (err) {
-      console.error("Error updating profile:", err);
-      setError("An error occurred while updating your profile.");
+      console.error("Update error:", err);
+      setError("Something went wrong");
     }
   };
 
-  const handelDeleteLink = async (linkId) => {
+  const handleProfilePictureSave = async (url) => {
+    const token = localStorage.getItem("authToken");
     const userId = localStorage.getItem("userId");
-    console.log("link id:", linkId, "user id", userId);
+
+    if (!token || !userId) return;
 
     try {
-      const response = await fetch("/api/auth/deleteLink", {
+      const res = await fetch(`/api/auth/profile?userId=${userId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ profilePicture: url }),
+      });
+
+      const data = await res.json();
+      if (res.ok) setUser(data);
+    } catch (err) {
+      console.error("Profile picture save failed:", err);
+    }
+  };
+
+  const handleDeleteLink = async (linkId) => {
+    const userId = localStorage.getItem("userId");
+
+    try {
+      const res = await fetch("/api/auth/deleteLink", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ linkId, userId }),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Adding Error:", errorData);
-        setError(errorData.error || "An error occurred"); // Set error message
-        return;
-      }
+      if (!res.ok) return;
 
-      const data = await response.json();
-      console.log("Link deleted successfully:", data);
-      // Remove the deleted link from the state
-      setLinks((prevLinks) => prevLinks.filter((link) => link._id !== linkId));
-    } catch (error) {
-      console.error("Error deleting link:", error);
-      setError("Something went wrong. Please try again.");
+      setLinks((prev) => prev.filter((link) => link._id !== linkId));
+    } catch (err) {
+      console.error("Delete link failed:", err);
     }
   };
 
-  const handelViewProfile = (id) => {
-    router.push(`/user/${id}`);
-  };
-
-  if (loading)
+  if (loading) {
     return (
-      <div role="status" className="flex flex-row min-h-screen justify-center items-center">
-        <svg
-          aria-hidden="true"
-          class="inline w-10 h-10 text-gray-200 animate-spin dark:text-gray-600 fill-blue-600"
-          viewBox="0 0 100 101"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
-            fill="currentColor"
-          />
-          <path
-            d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
-            fill="currentFill"
-          />
-        </svg>
-        <span class="sr-only">Loading...</span>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+        <div className="flex flex-col items-center space-y-4">
+          <svg
+            className="animate-spin h-12 w-12 text-blue-400"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+              fill="none"
+            ></circle>
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            ></path>
+          </svg>
+          <p className="text-white/60">Loading profile...</p>
+        </div>
       </div>
     );
+  }
 
   return (
-    <div className=" max-w-2xl mx-4 sm:max-w-sm md:max-w-sm lg:max-w-sm xl:max-w-sm sm:mx-auto md:mx-auto lg:mx-auto xl:mx-auto mt-8 mb-8 bg-white shadow-xl rounded-lg text-gray-900">
-      <div className="rounded-t-lg h-32 overflow-hidden">
-        <img
-          className="object-cover object-top w-full"
-          src="https://images.unsplash.com/photo-1549880338-65ddcdfd017b?ixlib=rb-1.2.1&q=80&fm=jpg&crop=entropy&cs=tinysrgb&w=400&fit=max&ixid=eyJhcHBfaWQiOjE0NTg5fQ"
-          alt="Mountain"
-        />
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 py-12 px-6 relative overflow-hidden">
+      {/* Animated background */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none opacity-20">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl animate-pulse"></div>
+        <div className="absolute top-1/2 right-1/4 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl animate-pulse delay-1000"></div>
       </div>
-      {/* User info */}
-      {user && (
-        <>
-          {/* --------------------------------------------- User image --------------------------------------------------------------------------*/}
-          <div className="mx-auto w-32 h-32 relative -mt-16 border-4 border-white rounded-full overflow-hidden">
-            <ProfilePictureUpload
-              onUpload={handleUpload}
-              imageUrl={imageUrl}
-              setImageUrl={setImageUrl}
-            />
-          </div>
-          {/* User name */}
-          <div className="text-center mt-2">
-            {editingField === "name" ? (
-              <div className="flex items-center space-x-2 justify-center">
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  className="border p-2 rounded"
-                />
-                <button
-                  onClick={() => handleSaveField("name")}
-                  className="px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600"
-                >
-                  Save
-                </button>
-                <button
-                  onClick={handleCancelEdit}
-                  className="px-2 py-1 bg-gray-500 text-white rounded hover:bg-gray-600"
-                >
-                  Cancel
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center space-x-2 justify-center">
-                <h2 className="font-semibold">{user.name}</h2>
-                <button
-                  onClick={() => handleEditField("name")}
-                  className="text-blue-500 hover:text-blue-700"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
-                    <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                  </svg>
-                </button>
-              </div>
-            )}
-          </div>
-          {/* User occupation */}
-          <div className="text-center mt-2">
-            {editingField === "occupation" ? (
-              <div className="flex items-center space-x-2">
-                <input
-                  type="text"
-                  name="occupation"
-                  value={formData.occupation}
-                  onChange={handleChange}
-                  className="border p-2 rounded"
-                />
-                <button
-                  onClick={() => handleSaveField("occupation")}
-                  className="px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600"
-                >
-                  Save
-                </button>
-                <button
-                  onClick={handleCancelEdit}
-                  className="px-2 py-1 bg-gray-500 text-white rounded hover:bg-gray-600"
-                >
-                  Cancel
-                </button>
-              </div>
-            ) : (
-              <div className="text-center mt-2">
-                <p className="text-gray-500">{user.occupation}</p>
-                <button
-                  onClick={() => handleEditField("occupation")}
-                  className="text-blue-500 hover:text-blue-700"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
-                    <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                  </svg>
-                </button>
-              </div>
-            )}
-          </div>
 
-          {/* -------------------------------------------------User Contact Information-----------------------------------------------------------------*/}
-          <div className="p-4 border-t mx-8 mt-2 flex justify-center">
-            <div className="p-4">
-              <div className="mt-2 space-y-2">
+      <div className="max-w-2xl mx-auto relative z-10">
+        {/* Main Card */}
+        <div className="relative">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-3xl blur-xl opacity-30"></div>
+          <div className="relative bg-white/10 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl overflow-hidden">
+            {/* Header Background */}
+            <div className="h-32 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"></div>
+
+            {/* Profile Picture */}
+            <div className="px-8 -mt-16 mb-6">
+              <div className="w-32 h-32 border-4 border-white/20 rounded-full overflow-hidden shadow-xl">
+                <ProfilePictureUpload
+                  imageUrl={imageUrl}
+                  onUpload={(url) => {
+                    setImageUrl(url);
+                    handleProfilePictureSave(url);
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Profile Content */}
+            <div className="px-8 pb-8 space-y-6">
+              {/* Name */}
+              <div>
+                {editingField === "name" ? (
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="text"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleChange}
+                      className="flex-1 px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <button
+                      onClick={() => handleSaveField("name")}
+                      className="p-2 bg-green-500 rounded-lg hover:bg-green-600 transition"
+                    >
+                      <Save className="text-white" size={20} />
+                    </button>
+                    <button
+                      onClick={handleCancelEdit}
+                      className="p-2 bg-gray-500 rounded-lg hover:bg-gray-600 transition"
+                    >
+                      <X className="text-white" size={20} />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-3xl font-bold text-white">
+                      {user.name}
+                    </h2>
+                    <button
+                      onClick={() => handleEditField("name")}
+                      className="text-blue-400 hover:text-blue-300"
+                    >
+                      <Edit2 size={20} />
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Occupation */}
+              <div>
+                {editingField === "occupation" ? (
+                  <div className="flex items-center space-x-2">
+                    <Briefcase className="text-white/40" size={20} />
+                    <input
+                      type="text"
+                      name="occupation"
+                      value={formData.occupation}
+                      onChange={handleChange}
+                      className="flex-1 px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <button
+                      onClick={() => handleSaveField("occupation")}
+                      className="p-2 bg-green-500 rounded-lg hover:bg-green-600 transition"
+                    >
+                      <Save className="text-white" size={20} />
+                    </button>
+                    <button
+                      onClick={handleCancelEdit}
+                      className="p-2 bg-gray-500 rounded-lg hover:bg-gray-600 transition"
+                    >
+                      <X className="text-white" size={20} />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2 text-white/70">
+                      <Briefcase size={20} />
+                      <span>{user.occupation}</span>
+                    </div>
+                    <button
+                      onClick={() => handleEditField("occupation")}
+                      className="text-blue-400 hover:text-blue-300"
+                    >
+                      <Edit2 size={18} />
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Contact Info */}
+              <div className="space-y-4 pt-4 border-t border-white/10">
+                {/* Email */}
                 <div>
                   {editingField === "email" ? (
                     <div className="flex items-center space-x-2">
+                      <Mail className="text-white/40" size={20} />
                       <input
                         type="email"
                         name="email"
                         value={formData.email}
                         onChange={handleChange}
-                        className="border p-2 rounded"
+                        className="flex-1 px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                       <button
                         onClick={() => handleSaveField("email")}
-                        className="px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600"
+                        className="p-2 bg-green-500 rounded-lg hover:bg-green-600 transition"
                       >
-                        Save
+                        <Save className="text-white" size={20} />
                       </button>
                       <button
                         onClick={handleCancelEdit}
-                        className="px-2 py-1 bg-gray-500 text-white rounded hover:bg-gray-600"
+                        className="p-2 bg-gray-500 rounded-lg hover:bg-gray-600 transition"
                       >
-                        Cancel
+                        <X className="text-white" size={20} />
                       </button>
                     </div>
                   ) : (
-                    <div className="flex items-center space-x-2">
-                      <p>Email: {user.email}</p>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2 text-white/70">
+                        <Mail size={20} />
+                        <span>{user.email}</span>
+                      </div>
                       <button
                         onClick={() => handleEditField("email")}
-                        className="text-blue-500 hover:text-blue-700"
+                        className="text-blue-400 hover:text-blue-300"
                       >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-5 w-5"
-                          viewBox="0 0 20 20"
-                          fill="currentColor"
-                        >
-                          <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                        </svg>
+                        <Edit2 size={18} />
                       </button>
                     </div>
                   )}
                 </div>
 
+                {/* Phone */}
                 <div>
                   {editingField === "phone" ? (
                     <div className="flex items-center space-x-2">
+                      <Phone className="text-white/40" size={20} />
                       <input
                         type="tel"
                         name="phone"
                         value={formData.phone}
                         onChange={handleChange}
-                        className="border p-2 rounded"
+                        className="flex-1 px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                       <button
                         onClick={() => handleSaveField("phone")}
-                        className="px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600"
+                        className="p-2 bg-green-500 rounded-lg hover:bg-green-600 transition"
                       >
-                        Save
+                        <Save className="text-white" size={20} />
                       </button>
                       <button
                         onClick={handleCancelEdit}
-                        className="px-2 py-1 bg-gray-500 text-white rounded hover:bg-gray-600"
+                        className="p-2 bg-gray-500 rounded-lg hover:bg-gray-600 transition"
                       >
-                        Cancel
+                        <X className="text-white" size={20} />
                       </button>
                     </div>
                   ) : (
-                    <div className="flex items-center space-x-2">
-                      <p>Phone: {user.phone}</p>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2 text-white/70">
+                        <Phone size={20} />
+                        <span>{user.phone}</span>
+                      </div>
                       <button
                         onClick={() => handleEditField("phone")}
-                        className="text-blue-500 hover:text-blue-700"
+                        className="text-blue-400 hover:text-blue-300"
                       >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-5 w-5"
-                          viewBox="0 0 20 20"
-                          fill="currentColor"
-                        >
-                          <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                        </svg>
+                        <Edit2 size={18} />
                       </button>
                     </div>
                   )}
                 </div>
               </div>
+
+              {/* About Me */}
+              <div className="pt-4 border-t border-white/10">
+                <AboutMe aboutMe={aboutMe} setAboutMe={setAboutMe} />
+              </div>
+
+              {/* Add Link */}
+              <div className="pt-4 border-t border-white/10">
+                <AddLink setLinks={setLinks} />
+              </div>
+
+              {/* Links List */}
+              {links.length > 0 && (
+                <div className="space-y-3 pt-4 border-t border-white/10">
+                  <h3 className="text-white font-semibold flex items-center space-x-2">
+                    <LinkIcon size={18} />
+                    <span>My Links</span>
+                  </h3>
+                  {links.map((link) => (
+                    <div key={link._id} className="flex items-center space-x-2">
+                      <a
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white hover:bg-white/10 transition text-center font-medium"
+                      >
+                        {link.title}
+                      </a>
+                      <button
+                        onClick={() => handleDeleteLink(link._id)}
+                        className="p-3 bg-red-500/20 border border-red-500/30 rounded-xl hover:bg-red-500/30 transition"
+                      >
+                        <Trash2 className="text-red-400" size={20} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* QR Code */}
+              <div className="pt-6 border-t border-white/10 flex flex-col items-center space-y-4">
+                <div className="bg-white p-4 rounded-2xl">
+                  <div className="w-48 h-48 bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl flex items-center justify-center">
+                    {/* <QrCode 
+                    className="text-white" size={128} 
+                   
+                    /> */}
+                    <QRCodeCanvas
+                      value={`https://kakaw-ten.vercel.app/user/${user._id}`}
+                      size={128}
+                    />
+                  </div>
+                </div>
+                <p className="text-white/60 text-sm text-center">
+                  Scan to view profile
+                </p>
+              </div>
+
+              {/* Error */}
+              {error && (
+                <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-red-200">
+                  {error}
+                </div>
+              )}
             </div>
           </div>
-        </>
-      )}
-
-      {/* -------------------------------about me-------------------------------------------------------------- */}
-      <div className="p-4 border-t mx-8 mt-2">
-        <div className="mt-2 space-y-2">
-          <AboutMe aboutMe={aboutMe} setAboutMe={setAboutMe} />
         </div>
       </div>
-
-      {/* -------------------------------User Social Media Links Add-------------------------------------------------------------- */}
-      <div className="p-4 border-t mx-8 mt-2">
-        <div className="mt-2 space-y-2">
-          <AddLink setLinks={setLinks} />
-        </div>
-      </div>
-      {/* -------------------------------User Social Media Links -------------------------------------------------------------- */}
-      <div className="p-4 border-t mx-8 mt-2">
-        <div className="mt-2 space-y-2">
-          {links &&
-            links.map((link) => (
-              <div
-                key={link._id}
-                className="flex items-center justify-center w-full "
-              >
-                <button className="bg-white w-full text-gray-800 font-semibold py-2 px-4 border border-gray-400 rounded shadow">
-                  <a
-                    key={link._id}
-                    href={link.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {link.title}
-                  </a>
-                </button>
-                <button onClick={() => handelDeleteLink(link._id)}>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    width="24"
-                    height="24"
-                    color="#ed1212"
-                    fill="none"
-                  >
-                    <path
-                      d="M19.5 5.5L18.8803 15.5251C18.7219 18.0864 18.6428 19.3671 18.0008 20.2879C17.6833 20.7431 17.2747 21.1273 16.8007 21.416C15.8421 22 14.559 22 11.9927 22C9.42312 22 8.1383 22 7.17905 21.4149C6.7048 21.1257 6.296 20.7408 5.97868 20.2848C5.33688 19.3626 5.25945 18.0801 5.10461 15.5152L4.5 5.5"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                    />
-                    <path
-                      d="M3 5.5H21M16.0557 5.5L15.3731 4.09173C14.9196 3.15626 14.6928 2.68852 14.3017 2.39681C14.215 2.3321 14.1231 2.27454 14.027 2.2247C13.5939 2 13.0741 2 12.0345 2C10.9688 2 10.436 2 9.99568 2.23412C9.8981 2.28601 9.80498 2.3459 9.71729 2.41317C9.32164 2.7167 9.10063 3.20155 8.65861 4.17126L8.05292 5.5"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                    />
-                    <path
-                      d="M9.5 16.5L9.5 10.5"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                    />
-                    <path
-                      d="M14.5 16.5L14.5 10.5"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                </button>
-              </div>
-            ))}
-        </div>
-      </div>
-      {/* ----------------------------------------------------User QR code ------------------------------------------*/}
-      <div className="p-4 border-t mx-8 mt-2 flex justify-center">
-        <button onClick={() => handelViewProfile(user._id)}>
-          <Image
-            text={`https://kakaw-ten.vercel.app/user/${user._id}`}
-            options={{
-              type: "image/jpeg",
-              quality: 1,
-              errorCorrectionLevel: "M",
-              margin: 3,
-              scale: 4,
-              width: 200,
-              color: {
-                dark: "#000",
-                light: "#FFFFFF",
-              },
-            }}
-          />
-        </button>
-      </div>
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
-          {error}
-        </div>
-      )}
     </div>
   );
 }
-
-export default requireAuth(Profile);
