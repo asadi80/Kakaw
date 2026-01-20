@@ -1,4 +1,4 @@
-import connectToDatabase from "../../../utils/dbLocal";
+import connectToDatabase from "../../../utils/db";
 import User from "../../../models/User";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";

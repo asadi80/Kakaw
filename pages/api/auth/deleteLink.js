@@ -1,4 +1,4 @@
-import connectToDatabase from "../../../utils/dbLocal";
+import connectToDatabase from "../../../utils/db";
 import User from "../../../models/User";
 import Link from "../../../models/Link";
 
